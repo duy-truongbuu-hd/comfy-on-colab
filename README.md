@@ -1,8 +1,8 @@
 # ComfyUI on Google Colab
 
-Run ComfyUI in Google Colab with optional Google Drive persistence, one-click model downloads, and public access via Cloudflare Tunnel or Localtunnel.
+Run ComfyUI in Google Colab with optional Google Drive persistence, one-click model downloads, and public access via a **named Cloudflare Tunnel** (your own hostname — no `trycloudflare.com` quick tunnel, no Localtunnel).
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nazdridoy/ComfyUI-On-Colab/blob/main/ComfyUIonColab.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/fluxvane/comfy-on-colab/blob/main/ComfyUIonColab.ipynb)
 
 ---
 
@@ -11,9 +11,7 @@ Run ComfyUI in Google Colab with optional Google Drive persistence, one-click mo
 - Clone and optionally update the upstream ComfyUI repository
 - Download models from Civitai or Hugging Face with fast aria2
 - Optional custom nodes installation (examples included, commented)
-- Start ComfyUI and expose it publicly via:
-  - Cloudflare Tunnel (trycloudflare)
-  - Localtunnel (fallback)
+- Start ComfyUI and expose it publicly via a **named Cloudflare Tunnel** (own hostname)
 
 ## Quick start
 1) Click the Colab badge above to open `ComfyUIonColab.ipynb`.
@@ -22,8 +20,20 @@ Run ComfyUI in Google Colab with optional Google Drive persistence, one-click mo
 4) Run the Setup cell to clone/update ComfyUI and install dependencies.
 5) Use the Models section to download checkpoints and VAEs into `./models/checkpoints` and `./models/vae`.
 6) Start ComfyUI:
-   - Cloudflare Tunnel cell prints a public URL ending with `trycloudflare.com` once port 8188 is ready
-   - Or use the Localtunnel cell as an alternative
+   - The **Cloudflare Tunnel** cell starts `cloudflared` with your named tunnel token and prints your public URL once port 8188 is ready (see the tunnel setup below)
+   - The **manual** section installs `cloudflared` and starts ComfyUI without a tunnel, if you want to attach your own connector
+
+## Cloudflare Tunnel setup (one-time, in your Cloudflare account)
+1) Cloudflare Zero Trust → **Networks → Tunnels** → create a tunnel (Cloudflared) named e.g. `comfy-colab`.
+2) In the tunnel, add a **Public hostname**:
+   - Subdomain/hostname: your choice, e.g. `comfy.example.com`
+   - Service: `http://localhost:8188`
+3) The tunnel page shows an **Install and run a connector** command containing a token
+   (`eyJhIjoi...`). Copy only the token value.
+4) In Colab: **Tools → Settings → Secrets**, add a secret named `CLOUDFLARE_TUNNEL_TOKEN` with that token value (grant notebook access when prompted).
+5) Run the notebook — the tunnel cell starts the connector with the token and your hostname stays stable across sessions.
+
+The tunnel token is a credential: keep it in Colab secrets (or a `.env` you never commit), never inline it in the notebook.
 
 ## Notebook structure (what each section does)
 - Mount/Unmount Google Drive
@@ -49,8 +59,9 @@ Run ComfyUI in Google Colab with optional Google Drive persistence, one-click mo
   - Helper: `install_custom_node(url)` clones into `/content/ComfyUI/custom_nodes`
   - Example lines for ComfyUI Manager/Impact Pack are included but commented out—uncomment to enable
 - Start and expose ComfyUI
-  - Cloudflare: downloads `cloudflared` `.deb`, starts tunnel, and prints a `trycloudflare.com` URL when port 8188 is ready
-  - Localtunnel: global `lt` install and public URL; also prints your endpoint IP for password prompt if required
+  - **Install cloudflared**: adds Cloudflare's official APT repo (`/usr/share/keyrings/cloudflare-main.gpg` + `pkg.cloudflare.com/cloudflared`) and installs the `cloudflared` package; `sudo` is used only when the notebook does not run as root
+  - **CF Tunnel**: reads the `CLOUDFLARE_TUNNEL_TOKEN` Colab secret, waits for port 8188, then runs `cloudflared tunnel --no-autoupdate run --token <TOKEN>` and prints the public hostname
+  - **Manual**: installs `cloudflared` and starts `python main.py --dont-print-server` without a tunnel
 
 ## Persistence tips
 - Recommended `DRIVE_PATH`: `/content/drive/MyDrive`
@@ -59,7 +70,11 @@ Run ComfyUI in Google Colab with optional Google Drive persistence, one-click mo
 
 ## Troubleshooting
 - Cloudflared hangs or prints no URL:
-  - Re-run the cell after ComfyUI fully starts, or use the Localtunnel cell as fallback
+  - The tunnel cell waits for port 8188 before starting the connector; if ComfyUI is not up yet, wait and re-run
+  - `missing secret CLOUDFLARE_TUNNEL_TOKEN` → add the tunnel token to Colab secrets and grant the notebook access
+  - `Registered tunnel connection` never appears → check the tunnel status in Cloudflare Zero Trust; the token must belong to the tunnel that owns the public hostname
+  - `cloudflared` not found → re-run the **Install cloudflared** cell
+  - 502/1033 at your hostname → the public hostname's service must point to `http://localhost:8188`
 - Civitai 403 or auth errors:
   - Ensure `CIVITAI_API_TOKEN` is set in Colab user secrets and the link is valid
 - Hugging Face gated models:
