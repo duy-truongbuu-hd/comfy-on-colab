@@ -43,21 +43,14 @@ The tunnel token is a credential: keep it in Colab secrets (or a `.env` you neve
   - Clones `https://github.com/comfyanonymous/ComfyUI` if not present
   - If `UPDATE_COMFY_UI = True`, runs `git pull`
   - Installs dependencies with `pip install xformers!=0.0.18 -r requirements.txt` and CUDA wheels extra-indexes
-- Models download helpers
-  - Installs `aria2` for fast, segmented downloads
-  - `downloadModel(url, filename=None)` supports Civitai and Hugging Face
-  - Civitai API token is read from Colab user secrets via:
-    ```python
-    from google.colab import userdata
-    CIVITAI_API_TOKEN = userdata.get('CIVITAI_API_TOKEN')
-    ```
-    Add a secret named `CIVITAI_API_TOKEN` in Colab (Manage user secrets) if you download private/protected links.
-  - Example targets used in the notebook:
-    - Checkpoints: `./models/checkpoints`
-    - VAEs: `./models/vae`
+- Models download
+  - One manifest cell lists every model this setup uses (mirrors `ComfyUI-Shared/models`), as verified direct Hugging Face links from `Comfy-Org/*` repacks + `lightx2v` — no auth needed
+  - Toggle groups via `WANT = {"qwen-image": True, "trellis": ..., "pixal3d": ..., "3d-aux": ..., "acestep": ..., "minimax-music": ..., "stable-audio": ..., "qwen3.5": ...}`; ~76 GB if all enabled, so prefer `DRIVE_PATH` persistence
+  - Installs `aria2` for fast, segmented, resumable downloads; existing files are skipped
+  - `downloadModel(url, destdir, filename=None)` also works for any ad-hoc Hugging Face or Civitai link; Civitai links need a `CIVITAI_API_TOKEN` Colab secret (auto-appended as `?token=`)
+  - Files land in the correct `models/<subdir>` (`diffusion_models`, `text_encoders`, `vae`, `loras`, `clip_vision`, `checkpoints`, `background_removal`, `geometry_estimation`)
 - Custom nodes (optional)
-  - Helper: `install_custom_node(url)` clones into `/content/ComfyUI/custom_nodes`
-  - Example lines for ComfyUI Manager/Impact Pack are included but commented out—uncomment to enable
+  - Example `git clone` lines for ComfyUI Manager/Impact Pack are in the download cell but commented out—uncomment to enable
 - Start and expose ComfyUI
   - **Install cloudflared**: adds Cloudflare's official APT repo (`/usr/share/keyrings/cloudflare-main.gpg` + `pkg.cloudflare.com/cloudflared`) and installs the `cloudflared` package; `sudo` is used only when the notebook does not run as root
   - **CF Tunnel**: reads the `CLOUDFLARE_TUNNEL_TOKEN` Colab secret, waits for port 8188, then runs `cloudflared tunnel --no-autoupdate run --token <TOKEN>` and prints the public hostname
