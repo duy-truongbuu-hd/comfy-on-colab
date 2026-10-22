@@ -2,7 +2,7 @@
 
 Run ComfyUI in Google Colab with optional Google Drive persistence, one-click model downloads, and access through Colab's built-in port proxy. All configuration comes from environment variables (`.env` file or Colab secrets).
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/fluxvane/comfy-on-colab/blob/main/ComfyUIonColab.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Duy-TruongBuu-HD/comfy-on-colab/blob/main/ComfyUIonColab.ipynb)
 
 ---
 
