@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.ipynb_checkpoints/
+
+# Local build/download artifacts (unexpanded %TEMP% paths from Windows shells)
+%TEMP%*.zip
+*.exe
